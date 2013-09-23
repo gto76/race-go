@@ -5,6 +5,7 @@ import (
 	"os"
 	"io/ioutil"
 	"time"
+	"github.com/nsf/termbox-go"
 )
 
 // SETUP
@@ -32,25 +33,36 @@ var fR []FinishLine
 
 // Counter
 var circles int = 0
-var outFlg = true
+//var outFlg = true
 
 func main() {
+	// Termbox init
+	termboxErr := termbox.Init()
+	if termboxErr != nil {
+        panic(termboxErr)
+	}
+	defer termbox.Close()
+	termbox.HideCursor()
+	// Track init
 	var trackFileName string
 	if  len(os.Args) > 1 {
 		trackFileName = os.Args[1]
 	} else {
 		trackFileName = "t1.tr"
 	}	
-	var boardByte, err = ioutil.ReadFile(trackFileName)
-	if (err != nil) {
+	var boardByte, readfileErr = ioutil.ReadFile(trackFileName)
+	if (readfileErr != nil) {
 		panic ("Could not open file with track")
 	}
 	var boardString = string(boardByte)
 	board = []rune(boardString)
 	tempBoard = make([]rune, len(board))
-	println(getBoard())
 	getFinishLines()
+	// Draw starting position
+	draw(getBoard())
+	termbox.Flush()
 	
+	// Main Loop	
 	for !checkWin() {
 		var move = getMove()
 		if (isMoveOk(move)) {
@@ -58,10 +70,37 @@ func main() {
 		}
 		checkCircle()
 		wait(WAIT)
-		brd:=getBoard()
-		clearScr()
-		println(brd, circles)
-		clearScr()
+		draw(getBoard())
+		termbox.Flush()
+		
+		// Checking pressed keys
+		go checkEvent()
+	}
+	
+}
+
+func checkEvent() {
+	switch ev := termbox.PollEvent(); ev.Type {
+	case termbox.EventKey:
+		if ev.Key == termbox.KeyCtrlC {
+			termbox.Close()
+			panic("Don't know how else to exit program:(")
+		}
+	case termbox.EventError:
+		panic(ev.Err)
+	}
+}
+
+func draw(text string) {
+	var x=0; var y=0
+	for _, value := range text {
+		if value == '\n' {
+			x=0
+			y++
+			continue
+		}
+		termbox.SetCell(x, y, value, 	termbox.ColorWhite, 										termbox.ColorBlack)
+		x++
 	}
 }
  
