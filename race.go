@@ -10,6 +10,7 @@ import (
 
 // SETUP
 const WAIT = 10
+const NO_BACKWARD_MOVEMENT = true
 
 // Board
 var board []rune
@@ -91,11 +92,10 @@ func drawFinishLine() {
 			board[key] = ' '
 		}
 	}
-
 }
 
 func checkKey() {
-	ev := termbox.PollEvent()
+	ev = termbox.PollEvent()
 	go checkKey()
 	switch ev.Type {
 		case termbox.EventKey:
