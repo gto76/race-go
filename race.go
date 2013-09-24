@@ -9,8 +9,10 @@ import (
 )
 
 // SETUP
-const WAIT = 10
-const NO_BACKWARD_MOVEMENT = true
+const WAIT = 50
+const ALLOW_BACK_OVER_LINE = false
+const START_CHAR = 'S'
+const FINISH_CHAR = 'F'
 
 // Board
 var board []rune
@@ -83,13 +85,13 @@ func main() {
 }
 
 func drawFinishLine() {
-// gre cez cev board, zamena
+	// gre cez cev board, zamena
 	for key, val := range board {
-		if val == 'L' {
-			board[key] = '|'
-		}
-		if val == 'R' {
+		if val == START_CHAR {
 			board[key] = ' '
+		}
+		if val == FINISH_CHAR {
+			board[key] = '|'
 		}
 	}
 }
@@ -123,24 +125,23 @@ func draw(text string) {
  
 func getFinishLines() {
 	for key, value := range board {
-		if value == 'L' {
-			var x, y = getPosXY(key)
-			fL = append(fL,FinishLine{x,y})
-		}
-		if value == 'R' {
+		if value == START_CHAR {
 			var x, y = getPosXY(key)
 			fR = append(fR,FinishLine{x,y})
+		}
+		if value == FINISH_CHAR {
+			var x, y = getPosXY(key)
+			fL = append(fL,FinishLine{x,y})
 		}
 	}
 }
 
-var conHeight int = 11 //env.Getenv("COLUMNS")
-
+//TODO per player
 var flFlag = false
 var frFlag = false
-
 func checkCircle() {
-	if doesArrayContainPosition(getPosIntPl(p1), fL) {
+	// na liniji
+	if doesArrayContainPosition(fL, getPosIntPl(p1)) {
 		if (frFlag == true) {
 			circles--
 			flFlag = true
@@ -148,7 +149,8 @@ func checkCircle() {
 		} else {
 			flFlag = true
 		}
-    } else if doesArrayContainPosition(getPosIntPl(p1), fR) {
+	// desno od linije
+    } else if doesArrayContainPosition(fR, getPosIntPl(p1)) {
     	if (flFlag == true) {
 			circles++
 			frFlag = true
@@ -156,30 +158,20 @@ func checkCircle() {
 		} else {
 			frFlag = true
 		}
+	// drugje
     } else {
 		flFlag = false
 		frFlag = false
 	}
 }
 
-func doesArrayContainPosition(position int, fll []FinishLine) bool {
+func doesArrayContainPosition(fll []FinishLine, position int) bool {
 	for _, fl := range fll {
 		if position == getPosIntFl(fl) {
 			return true
 		}
 	}
 	return false
-}
-
-func printCircles() {
-	println(circles)
-	clearScr()
-}
-
-func clearScr() {
-	for i:=0; i < conHeight; i++ {
-		println()
-	}
 }
 
 func toString(pl Player) string {
@@ -234,12 +226,27 @@ func getPosIntFl(fl FinishLine) int {
 }
 
 func isMoveOk(move int) bool {
-	var pos = getPos(p1.X, p1.Y, move)
-	var sym = board[pos]
+	var newPos = getPos(p1.X, p1.Y, move)
+	var sym = board[newPos]
 	if contains([]rune{' ', '|'}, sym) {
-		return true
+		if !ALLOW_BACK_OVER_LINE {
+			return !headingBackOverLine(getPosIntPl(p1), newPos)
+		} else {
+			return true
+		}
 	}
 	return false
+}
+
+//TODO da ne gre niti na crto
+func headingBackOverLine(oldPos int, newPos int) bool {
+	// v naslednji potezi bi na ciljni crti
+	// in zdaj je desno od ciljne crte
+	if 	doesArrayContainPosition(fL, newPos) &&
+		doesArrayContainPosition(fR, oldPos) {
+		return true
+	}
+    return false
 }
 
 func contains(arr []rune, sim rune) bool {
