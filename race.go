@@ -95,7 +95,7 @@ func drawFinishLine() {
 }
 
 func checkKey() {
-	ev = termbox.PollEvent()
+	ev := termbox.PollEvent()
 	go checkKey()
 	switch ev.Type {
 		case termbox.EventKey:
