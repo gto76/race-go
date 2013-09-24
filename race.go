@@ -9,7 +9,7 @@ import (
 )
 
 // SETUP
-const WAIT = 100
+const WAIT = 10
 
 // Board
 var board []rune
@@ -58,10 +58,16 @@ func main() {
 	board = []rune(boardString)
 	tempBoard = make([]rune, len(board))
 	getFinishLines()
+	// Draw finish line instead of L and R
+	drawFinishLine()
+	// Put player on start (R)
+	var f = fR[0]
+	p1.X = f.X; p1.Y = f.Y
 	// Draw starting position
 	draw(getBoard())
 	termbox.Flush()
-	
+	// Key reader goroutine
+	go checkKey()
 	// Main Loop	
 	for !checkWin() {
 		var move = getMove()
@@ -72,22 +78,33 @@ func main() {
 		wait(WAIT)
 		draw(getBoard())
 		termbox.Flush()
-		
-		// Checking pressed keys
-		go checkEvent()
 	}
-	
 }
 
-func checkEvent() {
-	switch ev := termbox.PollEvent(); ev.Type {
-	case termbox.EventKey:
-		if ev.Key == termbox.KeyCtrlC {
-			termbox.Close()
-			panic("Don't know how else to exit program:(")
+func drawFinishLine() {
+// gre cez cev board, zamena
+	for key, val := range board {
+		if val == 'L' {
+			board[key] = '|'
 		}
-	case termbox.EventError:
-		panic(ev.Err)
+		if val == 'R' {
+			board[key] = ' '
+		}
+	}
+
+}
+
+func checkKey() {
+	ev := termbox.PollEvent()
+	go checkKey()
+	switch ev.Type {
+		case termbox.EventKey:
+			if ev.Key == termbox.KeyCtrlC {
+				termbox.Close()
+				panic("Don't know how else to exit program:(")
+			}
+		case termbox.EventError:
+			panic(ev.Err)
 	}
 }
 
@@ -219,8 +236,17 @@ func getPosIntFl(fl FinishLine) int {
 func isMoveOk(move int) bool {
 	var pos = getPos(p1.X, p1.Y, move)
 	var sym = board[pos]
-	if sym != rune('.') {
+	if contains([]rune{' ', '|'}, sym) {
 		return true
+	}
+	return false
+}
+
+func contains(arr []rune, sim rune) bool {
+	for _, val := range arr {
+		if val == sim {
+			return true
+		}
 	}
 	return false
 }
