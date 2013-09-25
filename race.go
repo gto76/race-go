@@ -13,6 +13,8 @@ const WAIT = 50
 const ALLOW_BACK_OVER_LINE = false
 const START_CHAR = 'S'
 const FINISH_CHAR = 'F'
+const DEFAULT_TRACK = "t1.tr"
+const FINISH_LINE = '|'
 
 // Board
 var board []rune
@@ -23,8 +25,38 @@ type Player struct {
 	Symbol	rune
 	X 		int
 	Y		int
+	laps 	int//= 0
+	flFlag  bool//= false
+	frFlag 	bool//= false
 }
-var p1 = Player{2015, 3, 3}	
+var pl1 =	Player{2015, 3, 3, 0, false, false}
+var pl2 = Player{2016, 3, 3, 0, false, false}
+var players = []Player{pl1, pl2}
+
+// Channels
+var channels []chan int
+/*
+var ch1 chan int
+var ch2 chan int
+*/
+var globalChangeChanel chan int
+
+// Controler
+func NewControler(pl *Player, moveFromInputer chan int) {
+	for {
+		move := <-moveFromInputer
+		pl.moveIfPossible(move)
+	}
+}
+
+// Inputer
+func NewRandomInputer(moveToControler chan int) {
+	for {
+		wait(WAIT)
+		move := getRandomMove()
+		moveToControler <- move
+	}
+}
 
 // Finish Line
 type FinishLine struct {
@@ -33,10 +65,6 @@ type FinishLine struct {
 }
 var fL []FinishLine
 var fR []FinishLine
-
-// Counter
-var circles int = 0
-//var outFlg = true
 
 func main() {
 	// Termbox init
@@ -51,7 +79,7 @@ func main() {
 	if  len(os.Args) > 1 {
 		trackFileName = os.Args[1]
 	} else {
-		trackFileName = "t1.tr"
+		trackFileName = DEFAULT_TRACK
 	}	
 	var boardByte, readfileErr = ioutil.ReadFile(trackFileName)
 	if (readfileErr != nil) {
@@ -64,23 +92,53 @@ func main() {
 	// Draw finish line instead of L and R
 	drawFinishLine()
 	// Put player on start (R)
-	var f = fR[0]
-	p1.X = f.X; p1.Y = f.Y
+	putPlayersOnStart()
 	// Draw starting position
 	draw(getBoard())
 	termbox.Flush()
 	// Key reader goroutine
 	go checkKey()
+	// Controlers and imputers	
+	globalChangeChanel = make(chan int)
+	connectModules()
 	// Main Loop	
 	for !checkWin() {
-		var move = getMove()
-		if (isMoveOk(move)) {
-			executeMove(move)
-		}
-		checkCircle()
-		wait(WAIT)
-		draw(getBoard())
+		<- globalChangeChanel
+		brd := getBoard()
+		draw(brd)
 		termbox.Flush()
+	}
+}
+
+func connectModules() {
+	// create channels
+	for i := 0; i < len(players); i++ {
+		var chanel = make(chan int)
+		channels = append(channels, chanel)
+	}
+	// create modules
+	for i, ch := range channels {
+		go NewControler(&players[i], ch)
+		go NewRandomInputer(ch)
+	}	
+}
+
+func putPlayersOnStart() {
+	i := 0
+	for _, pl := range players {
+		if len(fR) == i {
+			i = 0
+		}
+		sL := fR[i]
+		i++
+		pl.X = sL.X 
+		pl.Y = sL.Y
+	}
+}
+
+func (pl *Player) moveIfPossible(move int) {
+	if (pl.isMoveOk(move)) {
+		pl.executeMove(move)
 	}
 }
 
@@ -91,11 +149,12 @@ func drawFinishLine() {
 			board[key] = ' '
 		}
 		if val == FINISH_CHAR {
-			board[key] = '|'
+			board[key] = FINISH_LINE
 		}
 	}
 }
 
+//TODO change to key listener module
 func checkKey() {
 	ev := termbox.PollEvent()
 	go checkKey()
@@ -136,38 +195,35 @@ func getFinishLines() {
 	}
 }
 
-//TODO per player
-var flFlag = false
-var frFlag = false
-func checkCircle() {
+func (pl *Player) checkCircle() {
 	// na liniji
-	if doesArrayContainPosition(fL, getPosIntPl(p1)) {
-		if (frFlag == true) {
-			circles--
-			flFlag = true
-			frFlag = false
+	if doesArrayContainPosition(fL, pl.getPosInt()) {
+		if (pl.frFlag == true) {
+			pl.laps--
+			pl.flFlag = true
+			pl.frFlag = false
 		} else {
-			flFlag = true
+			pl.flFlag = true
 		}
 	// desno od linije
-    } else if doesArrayContainPosition(fR, getPosIntPl(p1)) {
-    	if (flFlag == true) {
-			circles++
-			frFlag = true
-			flFlag = false
+    } else if doesArrayContainPosition(fR, pl.getPosInt()) {
+    	if (pl.flFlag == true) {
+			pl.laps++
+			pl.frFlag = true
+			pl.flFlag = false
 		} else {
-			frFlag = true
+			pl.frFlag = true
 		}
 	// drugje
     } else {
-		flFlag = false
-		frFlag = false
+		pl.flFlag = false
+		pl.frFlag = false
 	}
 }
 
 func doesArrayContainPosition(fll []FinishLine, position int) bool {
 	for _, fl := range fll {
-		if position == getPosIntFl(fl) {
+		if position == fl.getPosInt() {
 			return true
 		}
 	}
@@ -180,13 +236,15 @@ func toString(pl Player) string {
 
 func getBoard() string {
 	copy(tempBoard[:], board[0:len(board)])
-	drawPlayerOnBoard(p1, tempBoard)
+	for _, pl := range players {
+		pl.drawPlayerOnBoard(tempBoard)
+	}
 	return string(tempBoard)
 }
 
-func drawPlayerOnBoard(pl Player, board []rune) {
-	var posInt = getPosInt(pl.X, pl.Y) 
-	board[posInt] = pl.Symbol
+func (pl *Player) drawPlayerOnBoard(boardLoc []rune) {
+	var posInt = pl.getPosInt()
+	boardLoc[posInt] = pl.Symbol
 }
 
 func getPosXY(pos int) (int, int) {
@@ -217,20 +275,20 @@ func getPosInt(x int, y int) int {
 	panic("getPosInt: wrong coordinates")
 }
 
-func getPosIntPl(pl Player) int {
+func (pl *Player) getPosInt() int {
 	return getPosInt(pl.X, pl.Y)
 }
 
-func getPosIntFl(fl FinishLine) int {
+func (fl *FinishLine) getPosInt() int {
 	return getPosInt(fl.X, fl.Y)
 }
 
-func isMoveOk(move int) bool {
-	var newPos = getPos(p1.X, p1.Y, move)
+func (pl *Player) isMoveOk(move int) bool {
+	var newPos = getPos(pl.X, pl.Y, move)
 	var sym = board[newPos]
 	if contains([]rune{' ', '|'}, sym) {
 		if !ALLOW_BACK_OVER_LINE {
-			return !headingBackOverLine(getPosIntPl(p1), newPos)
+			return !headingBackOverLine(pl.getPosInt(), newPos)
 		} else {
 			return true
 		}
@@ -258,19 +316,21 @@ func contains(arr []rune, sim rune) bool {
 	return false
 }
 
-func executeMove(move int) {
+func (pl *Player) executeMove(move int) {
 	if move == 1 {
-		p1.Y--
+		pl.Y--
 	}	
 	if move == 2 {
-		p1.X++
+		pl.X++
 	}
 	if move == 3 {
-		p1.Y++
+		pl.Y++
 	}
 	if move == 4 {
-		p1.X--
+		pl.X--
 	}
+	pl.checkCircle()
+	globalChangeChanel <- 1
 }
 
 func getPos(x int, y int, move int) int {
@@ -290,7 +350,7 @@ func getPos(x int, y int, move int) int {
 }
 
 //1:up 2:right 3:down 4: left
-func getMove() int {
+func getRandomMove() int {
     var rt = rand.Perm(4)
 	var rrt = rt[1]+1
 	return rrt
