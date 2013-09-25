@@ -35,10 +35,6 @@ var players = []Player{pl1, pl2}
 
 // Channels
 var channels []chan int
-/*
-var ch1 chan int
-var ch2 chan int
-*/
 var globalChangeChanel chan int
 
 // Controler
@@ -117,10 +113,18 @@ func connectModules() {
 		channels = append(channels, chanel)
 	}
 	// create modules
+	go NewControler(&players[0], ch[0])
+	go NewRandomInputer(ch[0])
+
+	go NewControler(&players[1], ch[1])
+	go NewRandomInputer(ch[1])
+
+/*
 	for i, ch := range channels {
 		go NewControler(&players[i], ch)
 		go NewRandomInputer(ch)
-	}	
+	}
+	*/	
 }
 
 func putPlayersOnStart() {
@@ -163,6 +167,14 @@ func checkKey() {
 			if ev.Key == termbox.KeyCtrlC {
 				termbox.Close()
 				panic("Don't know how else to exit program:(")
+			}
+			if ev.Key == termbox.KeyArrowUp {
+			}
+			if ev.Key == termbox.KeyArrowRight {
+			}
+			if ev.Key == termbox.KeyArrowDown {
+			}
+			if ev.Key == termbox.KeyArrowLeft {
 			}
 		case termbox.EventError:
 			panic(ev.Err)
