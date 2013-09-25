@@ -113,18 +113,17 @@ func connectModules() {
 		channels = append(channels, chanel)
 	}
 	// create modules
-	go NewControler(&players[0], ch[0])
-	go NewRandomInputer(ch[0])
+	go NewControler(&players[0], channels[0])
+	go NewRandomInputer(channels[0])
 
-	go NewControler(&players[1], ch[1])
-	go NewRandomInputer(ch[1])
-
-/*
+	go NewControler(&players[1], channels[1])
+	go NewRandomInputer(channels[1])
+	/*
 	for i, ch := range channels {
 		go NewControler(&players[i], ch)
 		go NewRandomInputer(ch)
 	}
-	*/	
+	*/
 }
 
 func putPlayersOnStart() {
