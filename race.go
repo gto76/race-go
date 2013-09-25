@@ -45,11 +45,18 @@ func NewControler(pl *Player, moveFromInputer chan int) {
 	}
 }
 
-// Inputer
+// Inputers
 func NewRandomInputer(moveToControler chan int) {
 	for {
 		wait(WAIT)
 		move := getRandomMove()
+		moveToControler <- move
+	}
+}
+
+func NewKeyInputer(moveToControler chan int, moveFromKeyListenerControler chan int) {
+	for {
+		var move = <- moveFromKeyListenerControler
 		moveToControler <- move
 	}
 }
@@ -61,6 +68,13 @@ type FinishLine struct {
 }
 var fL []FinishLine
 var fR []FinishLine
+
+//type KeyGroup string
+type KeyGroup int
+const (
+   	ARROW_KEYS = 0
+	ASWD_KEYS = 1
+)
 
 func main() {
 	// Termbox init
@@ -85,18 +99,36 @@ func main() {
 	board = []rune(boardString)
 	tempBoard = make([]rune, len(board))
 	getFinishLines()
-	// Draw finish line instead of L and R
 	drawFinishLine()
-	// Put player on start (R)
 	putPlayersOnStart()
 	// Draw starting position
 	draw(getBoard())
 	termbox.Flush()
-	// Key reader goroutine
-	go checkKey()
+
 	// Controlers and imputers	
 	globalChangeChanel = make(chan int)
-	connectModules()
+
+	//connectModules()	
+	// create channels
+	for i := 0; i < len(players); i++ {
+		var chanel = make(chan int)
+		channels = append(channels, chanel)
+	}
+	// create modules
+	go NewControler(&players[0], channels[0])
+	go NewRandomInputer(channels[0])
+	//go NewControler(&players[1], channels[1])
+	//go NewRandomInputer(channels[1])
+	var keyListener2KeyInputer = make(chan int)
+	go NewControler(&players[1], channels[1])
+	go NewKeyInputer(channels[1], keyListener2KeyInputer)
+
+	// Key reader goroutine
+	var keyGroup2ChannelMaper = map[KeyGroup] chan int {
+		ARROW_KEYS: keyListener2KeyInputer,	
+	} 
+	go listenToKeys(keyGroup2ChannelMaper)
+	
 	// Main Loop	
 	for !checkWin() {
 		<- globalChangeChanel
@@ -106,6 +138,7 @@ func main() {
 	}
 }
 
+/*
 func connectModules() {
 	// create channels
 	for i := 0; i < len(players); i++ {
@@ -116,15 +149,20 @@ func connectModules() {
 	go NewControler(&players[0], channels[0])
 	go NewRandomInputer(channels[0])
 
+	//go NewControler(&players[1], channels[1])
+	//go NewRandomInputer(channels[1])
+	
+	var keyListener2KeyInputer = make(chan int)
 	go NewControler(&players[1], channels[1])
-	go NewRandomInputer(channels[1])
+	go NewKeyInputer(channels[1], keyListener2KeyInputer)
+	
 	/*
 	for i, ch := range channels {
 		go NewControler(&players[i], ch)
 		go NewRandomInputer(ch)
 	}
 	*/
-}
+//}
 
 func putPlayersOnStart() {
 	i := 0
@@ -157,23 +195,52 @@ func drawFinishLine() {
 	}
 }
 
+
+
+/*
+const (
+        _           = iota // ignore first value by assigning to blank identifier
+        KB ByteSize = 1 << (10 * iota)
+        MB
+        GB
+        TB
+        PB
+        EB
+        ZB
+        YB
+)
+const KeyGroup = (
+	ARROW_KEYS = 0
+	ASWD_KEYS = 1
+)
+*/
+
 //TODO change to key listener module
-func checkKey() {
+func listenToKeys(chnls map[KeyGroup]chan int) {
 	ev := termbox.PollEvent()
-	go checkKey()
+	// When it gets event it recusively calls itself,
+	// so it listens for new events as soon as possible.
+	go listenToKeys(chnls)
 	switch ev.Type {
 		case termbox.EventKey:
 			if ev.Key == termbox.KeyCtrlC {
 				termbox.Close()
 				panic("Don't know how else to exit program:(")
 			}
-			if ev.Key == termbox.KeyArrowUp {
-			}
-			if ev.Key == termbox.KeyArrowRight {
-			}
-			if ev.Key == termbox.KeyArrowDown {
-			}
-			if ev.Key == termbox.KeyArrowLeft {
+			ch, present := chnls[ARROW_KEYS]
+			if present {
+				if ev.Key == termbox.KeyArrowUp {
+					ch <- 1
+				}
+				if ev.Key == termbox.KeyArrowRight {
+					ch <- 2
+				}
+				if ev.Key == termbox.KeyArrowDown {
+					ch <- 3
+				}
+				if ev.Key == termbox.KeyArrowLeft {
+					ch <- 4
+				}
 			}
 		case termbox.EventError:
 			panic(ev.Err)
