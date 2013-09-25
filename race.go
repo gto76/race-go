@@ -69,12 +69,13 @@ type FinishLine struct {
 var fL []FinishLine
 var fR []FinishLine
 
-//type KeyGroup string
+//type KeyGroup
 type KeyGroup int
 const (
    	ARROW_KEYS = 0
 	ASWD_KEYS = 1
 )
+
 
 func main() {
 	// Termbox init
@@ -138,32 +139,6 @@ func main() {
 	}
 }
 
-/*
-func connectModules() {
-	// create channels
-	for i := 0; i < len(players); i++ {
-		var chanel = make(chan int)
-		channels = append(channels, chanel)
-	}
-	// create modules
-	go NewControler(&players[0], channels[0])
-	go NewRandomInputer(channels[0])
-
-	//go NewControler(&players[1], channels[1])
-	//go NewRandomInputer(channels[1])
-	
-	var keyListener2KeyInputer = make(chan int)
-	go NewControler(&players[1], channels[1])
-	go NewKeyInputer(channels[1], keyListener2KeyInputer)
-	
-	/*
-	for i, ch := range channels {
-		go NewControler(&players[i], ch)
-		go NewRandomInputer(ch)
-	}
-	*/
-//}
-
 func putPlayersOnStart() {
 	i := 0
 	for _, pl := range players {
@@ -195,27 +170,6 @@ func drawFinishLine() {
 	}
 }
 
-
-
-/*
-const (
-        _           = iota // ignore first value by assigning to blank identifier
-        KB ByteSize = 1 << (10 * iota)
-        MB
-        GB
-        TB
-        PB
-        EB
-        ZB
-        YB
-)
-const KeyGroup = (
-	ARROW_KEYS = 0
-	ASWD_KEYS = 1
-)
-*/
-
-//TODO change to key listener module
 func listenToKeys(chnls map[KeyGroup]chan int) {
 	ev := termbox.PollEvent()
 	// When it gets event it recusively calls itself,
@@ -374,7 +328,6 @@ func (pl *Player) isMoveOk(move int) bool {
 	return false
 }
 
-//TODO da ne gre niti na crto
 func headingBackOverLine(oldPos int, newPos int) bool {
 	// v naslednji potezi bi na ciljni crti
 	// in zdaj je desno od ciljne crte
@@ -428,6 +381,7 @@ func getPos(x int, y int, move int) int {
 }
 
 //1:up 2:right 3:down 4: left
+//TODO make const
 func getRandomMove() int {
     var rt = rand.Perm(4)
 	var rrt = rt[1]+1
