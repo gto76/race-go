@@ -8,6 +8,7 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
+
 // SETUP
 const WAIT = 50
 const ALLOW_BACK_OVER_LINE = false
