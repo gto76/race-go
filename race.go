@@ -10,7 +10,7 @@ import (
 
 
 // SETUP
-const WAIT = 50
+const WAIT = 20
 const ALLOW_BACK_OVER_LINE = false
 const START_CHAR = 'S'
 const FINISH_CHAR = 'F'
