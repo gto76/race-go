@@ -14,7 +14,7 @@ const WAIT = 20
 const ALLOW_BACK_OVER_LINE = false
 const START_CHAR = 'S'
 const FINISH_CHAR = 'F'
-const DEFAULT_TRACK = "t1.tr"
+const DEFAULT_TRACK = "track01.tr"
 const FINISH_LINE = '|'
 
 // Board
