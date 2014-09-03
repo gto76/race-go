@@ -12,6 +12,6 @@ export GOPATH="$HOME/go-packages"
 go get github.com/nsf/termbox-go
 cd "$HOME"
 git clone https://github.com/gto76/race.git
-cd race
+cd race/src
 go run race.go
 ```
