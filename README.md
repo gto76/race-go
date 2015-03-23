@@ -12,7 +12,6 @@ sudo apt-get install golang
 mkdir "$HOME"/go-packages
 export GOPATH="$HOME/go-packages"
 go get github.com/nsf/termbox-go
-cd
 git clone https://github.com/gto76/race.git
 cd race/src
 go run race.go
