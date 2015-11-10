@@ -1,7 +1,7 @@
 Race Go
 =======
 
-Simple character racing game prototype written in Go. Definitely unfinished. But if nothing else displays a use of channels and termbox-go library, which is basically stripped down ncurses for Go.
+Simple character racing game prototype written in Go. Definitely unfinished. But if nothing else displays a use of channels and termbox-go library, which is basically stripped down _ncurses_ for Go.
 
 ![Alt text](/doc/race.png?raw=true "Screenshot")
 
