@@ -7,7 +7,7 @@ Simple character racing game prototype written in Go. Definitely unfinished. But
 
 How to run
 ----------
-```bash
+```
 sudo apt-get install golang
 mkdir "$HOME"/go-packages
 export GOPATH="$HOME/go-packages"
