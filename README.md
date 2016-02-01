@@ -8,11 +8,11 @@ Simple character racing game prototype written in Go. Definitely unfinished. But
 How to run
 ----------
 ```
-sudo apt-get install golang
-mkdir "$HOME"/go-packages
-export GOPATH="$HOME/go-packages"
-go get github.com/nsf/termbox-go
-git clone https://github.com/gto76/race.git
-cd race/src
-go run race.go
+$ sudo apt-get install golang
+$ mkdir "$HOME"/go-packages
+$ export GOPATH="$HOME/go-packages"
+$ go get github.com/nsf/termbox-go
+$ git clone https://github.com/gto76/race.git
+$ cd race/src
+$ go run race.go
 ```
